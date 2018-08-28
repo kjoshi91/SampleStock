@@ -2,8 +2,10 @@ package com.sampletradestock;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,7 @@ public class TradeUtil
 	    BigDecimal dayHigh;
 	    BigDecimal dayLow;
 	    BigDecimal dayOpen;
+	    BigDecimal changePercent;
 	    List<String> filtered= new ArrayList<String>();
 	    
 	    Iterator<String> rawIterator=rawList.iterator();
@@ -52,14 +55,16 @@ public class TradeUtil
 		dayHigh=temp.getQuote().getDayHigh();
 		dayLow=temp.getQuote().getDayLow();
 		dayOpen=temp.getQuote().getOpen();
-		if(dayOpen==dayLow)
+		changePercent=temp.getQuote().getChangeInPercent();
+		
+		if(dayOpen.compareTo(dayLow)==0)
 		{
-		    System.out.println("Adding to buy&sell filtered... ["+stockSymbol+"] : [Low:"+dayLow+"], [Open:"+dayOpen+"]");
+		    System.out.println("Adding to buy&sell filtered... ["+stockSymbol+"] : [Low:"+dayLow+"], [Open:"+dayOpen+"], [Change %: "+changePercent+"]");
 		    filtered.add(stockSymbol);
 		}
-		else if(dayOpen==dayHigh)
+		else if(dayOpen.compareTo(dayHigh)==0)
 		{
-		    System.out.println("Adding to sell&buy filtered... ["+stockSymbol+"] : [High:"+dayHigh+"], [Open:"+dayOpen+"]");
+		    System.out.println("Adding to sell&buy filtered... ["+stockSymbol+"] : [High:"+dayHigh+"], [Open:"+dayOpen+"], [Change %: "+changePercent+"]");
 		    filtered.add(stockSymbol);
 		}
 		else
@@ -81,11 +86,40 @@ public class TradeUtil
 	
     }
     
-    public static Map<String,String> placeOrder(List<String> filteredList)
+    public static Map<String, BigDecimal> placeOrder(List<String> filteredList)
     {
-    	
-    	
-    	return null;
+    	if(filteredList!=null)
+    	{
+    		String stockSymbol;
+			Stock temp;
+			BigDecimal tempChangePercent=new BigDecimal(0);
+			String selectedStock="";
+			Iterator<String> filteredIterator=filteredList.iterator();
+			Map<String,BigDecimal> tempMap=new Hashtable<>();
+    		try {
+				
+				while(filteredIterator.hasNext())
+				{
+					stockSymbol=filteredIterator.next();
+					temp=YahooFinance.get(stockSymbol);
+					if((tempChangePercent.compareTo(temp.getQuote().getChangeInPercent()))<0)
+					{
+						tempChangePercent=temp.getQuote().getChangeInPercent();
+						selectedStock=stockSymbol;
+					}
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		
+    		tempMap.put(selectedStock, tempChangePercent);
+    		return tempMap;
+    	}
+    	else
+    	{
+    		return null;
+    	}
     }
     
 }
